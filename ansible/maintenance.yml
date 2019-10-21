@@ -1,0 +1,10 @@
+---
+- name: Run maintaince role on specific hosts
+  hosts:
+    - webserver_01
+    - webserver_02
+    - webserver_loadbalancer
+    - database_01
+  remote_user: root
+  roles:
+    - maintenance

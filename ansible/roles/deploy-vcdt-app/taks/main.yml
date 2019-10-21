@@ -1,0 +1,54 @@
+---
+- name: Send notification message via Slack
+  slack:
+    token: '{{ slack_token }}'
+    msg: '{{ inventory_hostname }} Deployment of vcdt app started.'
+    icon_emoji: ':squirrel:'
+    username: 'Ansible Deployer'
+    channel: '#alerts'
+  when: production
+
+- name: Put the application in maintence mode
+  command: "php {{ app_path }}/artisan down"
+
+- name: Update the .env file
+  template: src=env.j2
+            dest={{ app_path }}/.env
+            backup=yes
+
+- name: Update Repository
+  git:
+    repo: "{{ git_repo }}"
+    dest: "{{ app_path }}"
+    version: "{{ git_branch }}"
+    accept_hostkey: yes
+    key_file: "{{ vcdt_home }}/.ssh/id_rsa"
+    ssh_opts:  "-o StrictHostKeyChecking=no"
+  become: true
+  become_user: "{{ vcdt_user }}"
+
+- composer:
+    command: install # default is --no-dev
+    working_dir: "{{ app_path }}"
+  when: production
+
+- composer:
+    command: install
+    working_dir: "{{ app_path }}"
+    no_dev: no # include packages from require-dev
+  when: staging or development
+
+- name: Run Migrations
+  command: "php {{ app_path }}/artisan migrate --force"
+
+- name: Put the application back live
+  command: "php {{ app_path }}/artisan artisan up"
+
+- name: Send notification message via Slack
+  slack:
+    token: '{{ slack_token }}'
+    msg: '{{ inventory_hostname }} Deployment of vcdt app completed.'
+    icon_emoji: ':squirrel:'
+    username: 'Ansible Deployer'
+    channel: '#alerts'
+  when: production

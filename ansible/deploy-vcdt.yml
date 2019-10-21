@@ -1,0 +1,19 @@
+---
+- name: Deploy VCDT Application
+  hosts: vcdt
+  remote_user: root
+  vars:
+    - production: yes
+    - staging: no
+    - development: no
+    - slack_token: IDKBYBFFJILL
+    - git_repo: git@github.com:svpernova09/vcdt.git
+    - git_branch: master
+    - app_path: /home/vcdt/vcdt
+    - app_url: http://vcdt.joeferguson.me
+    - vcdt_home: /home/vcdt
+    - vcdt_user: vcdt
+    - vcdt_user: hunter2
+  roles:
+    - deploy-vcdt-app
+

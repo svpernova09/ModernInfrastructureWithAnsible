@@ -1,0 +1,52 @@
+---
+# Set up letsencrypt for creating SSL certs.
+- name: Add certbot repository
+  apt_repository:
+    repo: ppa:certbot/certbot
+
+- name: Install certbot
+  apt: name=certbot state=latest update_cache=yes
+
+- name: Allow connections through firewall
+  ufw:
+    rule: allow
+    port: '{{ item }}'
+    proto: tcp
+  with_items:
+    - 80
+
+- name: Create SSL certificate
+  command: /usr/bin/certbot -n --standalone certonly -m you@email.com --agree-tos -d '{{ webserver_loadbalancer }}'
+  args:
+    creates: /etc/letsencrypt/live/'{{ webserver_loadbalancer }}'
+  when: inventory_hostname in groups['webserver_loadbalancer']
+
+# Renew letsencrypt certs periodically.
+- name: Add cron job for certbot renewal
+  cron:
+    name: Certbot automatic renewal
+    job: /usr/bin/certbot -n renew
+    minute: 0
+    hour: 8
+    day: 2
+    user: root
+
+# Prep the cert for HAProxy, and restart HAProxy.
+- name: Add Cron to Combine SSL & restart HAProxy
+  cron:
+    name: Combine SSL & restart HAProxy
+    job: "cat /etc/letsencrypt/live/{{ webserver_loadbalancer }}/fullchain.pem /etc/letsencrypt/live/{{ webserver_loadbalancer }}/privkey.pem > /etc/ssl/haproxy-{{ webserver_loadbalancer }}.pem && service haproxy restart"
+    minute: 30
+    hour: 9
+    day: 2
+    user: root
+
+- name: Create the SSL Cert for HAProxy
+  shell: "cat /etc/letsencrypt/live/{{ webserver_loadbalancer }}/fullchain.pem /etc/letsencrypt/live/{{ webserver_loadbalancer }}/privkey.pem > /etc/ssl/haproxy-{{ webserver_loadbalancer }}.pem"
+  notify: restart haproxy
+
+- name: Add renew_hook to webserver_loadbalancer
+  template: src=renewal-post-hook.sh.j2
+            dest=/etc/letsencrypt/renewal-hooks/post/{{ webserver_loadbalancer }}.sh
+            mode=0766
+  when: inventory_hostname in groups['webserver_loadbalancer']

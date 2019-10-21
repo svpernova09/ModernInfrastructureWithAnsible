@@ -1,0 +1,2 @@
+cat /etc/letsencrypt/live/{{ webserver_loadbalancer }}/fullchain.pem /etc/letsencrypt/live/{{ webserver_loadbalancer }}/privkey.pem > /etc/ssl/{{ webserver_loadbalancer }}.pem
+systemctl restart haproxy

@@ -1,0 +1,36 @@
+---
+- name: Add Docker GPG key
+  apt_key: url=https://download.docker.com/linux/ubuntu/gpg
+
+- name: Add Docker APT repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ansible_distribution_release}} stable
+
+- name: Install base docker packages
+  apt:
+    name: "{{ packages }}"
+    update_cache: yes
+  vars:
+    packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - docker-ce
+      - docker-compose
+
+- name: Ensure /root/.docker exists
+  file:
+    path: /root/.docker
+    state: directory
+
+- name: Set Docker config.json
+  template: src=docker-config.json.j2
+            dest=/root/.docker/config.json
+            mode=0600
+
+- name: Pull the latest image version
+  command: docker pull php:7.3.10-fpm-stretch
+
+- name: Prune Docker system (to save disk space)
+  command: docker system prune -f
