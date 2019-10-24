@@ -1,0 +1,23 @@
+---
+# Create admin accounts
+- name: Create admin accounts
+  user:
+    name: "{{ item }}"
+    state: present
+    groups: "sudo,{{ item }}"
+    shell: /bin/bash
+  loop:
+    - luke
+    - leia
+    - yoda
+
+- name: add several users
+  user:
+    name: "{{ item.name }}"
+    state: present
+    groups: "{{ item.groups }}"
+  loop:
+    - { name: 'emporer', groups: 'sith' }
+    - { name: 'anakin', groups: 'sith' }
+    - { name: 'luke', groups: 'jedi' }
+    - { name: 'ben', groups: 'jedi' }

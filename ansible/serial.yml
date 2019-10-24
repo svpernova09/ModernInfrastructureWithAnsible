@@ -1,0 +1,10 @@
+---
+- name: Serialization Example Playbook
+  hosts: webservers
+  serial: 2
+  tasks:
+  - name: task one
+    command: hostname
+  - name: task two
+    command: hostname
+

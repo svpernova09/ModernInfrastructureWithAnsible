@@ -1,0 +1,4 @@
+---
+- include_tasks: update_firewall.yml
+- include_tasks: install_php.yml
+- include_tasks: setup_git_repo.yml
